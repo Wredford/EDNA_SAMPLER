@@ -2,7 +2,8 @@ import datetime
 import csv
 import time
 from individual_sample import run_pump
-#import RPi.GPIO as GPIO
+from hardware.neopixel_led import set_led
+# import RPi.GPIO as GPIO
 
 ###################### CONFIG ###################################
 LOG_FILE = "logs/data.csv"
@@ -35,9 +36,8 @@ def read_flow():
 
 	return 2.5 #REPLACE
 
-def set_LED(color):
-
-	print(f"LED: {color}")
+def set_LED(state):
+    set_led(state)
 
 ############################# MONITOR FUNCTION ######################
 
@@ -46,35 +46,20 @@ def set_LED(color):
 
 ############################# MAIN SAMPLING FUNCTIONS  ###############
 
-def run_sample(duration):
-	set_LED("blue")
-	log_event("START")
-
-	start_time = time.time()
-
-	run_pump(duration)
-
-	flow = read_flow()
-	elapsed = time.time() - start_time
-
-	######## NEED TO CHANGE BELOW
-	# Notes
-	notes = ""
-	if flow <1:
-		notes = "low_flow"
-
-	log_event("STOP", flow_rate=flow, duration=elapsed, notes=notes)
-
-	set_LED("green")
-
 def run_test():
-	print("Running test sample?")
-	set_LED("blue")
+    set_LED("test")
+    run_sample(5)
+    set_LED("idle")
 
-	# Run a test
-	run_sample(5)
+def run_sample(duration):
+    set_LED("test")
 
-	set_LED("green")
+    try:
+        run_pump(duration)
+
+    except Exception as e:
+        set_LED("error")
+        raise e
 
 if __name__ == "__main__":
 	print("Running sampler...")
