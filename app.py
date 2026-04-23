@@ -31,7 +31,7 @@ def home():
 		<label>Interval (hrs):</label>
 		<input type="number" step=".01" name="interval_hours" value="{interval_hours}"><br><br>
 
-		<label>Flow Rate (1-10):</label>
+		<label>Preservative Pump Runtime (1-10 sec):</label>
 		<input type="number" step=".1" min="1" max="10" name="pres_time" value="{pres_time}"><br><br>
 
 		<input type="submit" value="Save">
