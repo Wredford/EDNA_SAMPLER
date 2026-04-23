@@ -1,16 +1,26 @@
 import board
 import neopixel
 
-# 1 LED on GPIO18 (physical pin 12)
-pixels = neopixel.NeoPixel(board.D18, 1, auto_write=True)
+# Single NeoPixel on GPIO10 is NOT needed for this library
+# Use a "logical" pin only (Blinka handles mapping internally)
+
+PIXEL_PIN = board.D18   # safe default for Pi NeoPixels
+NUM_PIXELS = 1
+
+pixels = neopixel.NeoPixel(
+    PIXEL_PIN,
+    NUM_PIXELS,
+    auto_write=True,
+    pixel_order=neopixel.GRB
+)
 
 def set_led(state):
     """
     States:
-    - "test"  -> blue
-    - "error" -> red
-    - "idle"  -> off
-    - "green" -> green (optional success state)
+    - test  -> blue
+    - error -> red
+    - green -> green
+    - idle  -> off
     """
 
     if state == "test":
