@@ -20,7 +20,7 @@ def home():
 
 	sample_duration = config.get("sample_duration", 10)
 	interval_hours = config.get("interval_hours", 6)
-	flow_rate = config.get("flow_rate", 0.5)
+	pres_time = config.get("pres_time", 5.0)
 
 	return f"""
 	<h1>eDNA Sampler Control Panel</h1>
@@ -32,7 +32,7 @@ def home():
 		<input type="number" step=".01" name="interval_hours" value="{interval_hours}"><br><br>
 
 		<label>Flow Rate (1-10):</label>
-		<input type="number" step=".1" min="1" max="10" name="flow_rate" value="{flow_rate}"><br><br>
+		<input type="number" step=".1" min="1" max="10" name="pres_time" value="{pres_time}"><br><br>
 
 		<input type="submit" value="Save">
 	</form>
@@ -48,7 +48,7 @@ def home():
 def save():
 	data = { "sample_duration": float(request.form["sample_duration"]),
 	"interval_hours": float(request.form["interval_hours"]),
-	"flow_rate": float(request.form["flow_rate"]) }
+	"pres_time": float(request.form["pres_time"]) }
 	save_config(data)
 	return "Saved! <br><a href='/'>Back</a>"
 

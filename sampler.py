@@ -1,66 +1,108 @@
 import datetime
 import csv
 import time
-from individual_sample import run_pump
-from hardware.neopixel_led import set_led
-# import RPi.GPIO as GPIO
+
+from hardware.led import set_led
+from hardware.motors import set_motor
 
 ###################### CONFIG ###################################
 LOG_FILE = "logs/data.csv"
 
 ###################### LOGGING ################################
-def log_event(event, flow_rate=0, duration=0, notes=""):
-	dtnow = datetime.datetime.now()
+def log_event(event, pres_time=0, duration=0, notes=""):
+    dtnow = datetime.datetime.now()
 
-	with open(LOG_FILE, "a", newline="") as f:
-		writer = csv.writer(f)
-		writer.writerow([dtnow.date(), dtnow.time(), event, flow_rate, duration, notes ])
-	print(f"LOG: {event}, Flow={flow_rate}, Duration={duration}, Notes={notes}")
+    with open(LOG_FILE, "a", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow([
+            dtnow.date(),
+            dtnow.time(),
+            event,
+            pres_time,
+            duration,
+            notes
+        ])
 
-##################### HARDWARE ####################################
-
-# UNDO THIS WHEN READY
-#GPIO.setmode(GPIO.BCM)
-#LED_PIN = 
-#BUTTON_PIN = 
-
-#GPIO.setup(LED_PIN, GPIO.OUT)
-#GPIO.setup(BUTTON_PIN, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+    print(f"LOG: {event}, Flow={pres_time}, Duration={duration}, Notes={notes}")
 
 
-def read_switch():
-	# PUT GPIO PIN HERE
-	return False
+###################### MOTOR SEQUENCE ############################
 
-def read_flow():
-
-	return 2.5 #REPLACE
-
-def set_LED(state):
-    set_led(state)
-
-############################# MONITOR FUNCTION ######################
+MOTOR_SEQUENCE = [
+    ("main1", "pres1"),
+    ("main2", "pres2"),
+    ("main3", "pres3"),
+]
 
 
+###################### CORE SEQUENCE ENGINE ######################
 
+def run_sequence(duration, pres_time, interval):
 
-############################# MAIN SAMPLING FUNCTIONS  ###############
+    set_led("sampling")
+    log_event("START_SEQUENCE")
 
-def run_test():
-    set_LED("test")
-    run_sample(5)
-    set_LED("idle")
-
-def run_sample(duration):
-    set_LED("test")
+    start_time = time.time()
 
     try:
-        run_pump(duration)
+        for main, pres in MOTOR_SEQUENCE:
+
+            # ---------------- MAIN MOTOR ----------------
+            log_event("MAIN_START", duration=duration, notes=main)
+
+            # set_motor(main, True)   # <-- COMMENTED OUT
+            time.sleep(duration)
+            # set_motor(main, False)  # <-- COMMENTED OUT
+
+            log_event("MAIN_STOP", duration=duration, notes=main)
+
+            time.sleep(2)
+
+            # ---------------- PRES MOTOR ----------------
+            log_event("PRES_START", pres_time=pres_time, notes=pres)
+
+            # set_motor(pres, True)   # <-- COMMENTED OUT
+            time.sleep(pres_time)
+            # set_motor(pres, False)  # <-- COMMENTED OUT
+
+            log_event("PRES_STOP", pres_time=pres_time, notes=pres)
+
+            # ---------------- INTERVAL ----------------
+            log_event("INTERVAL_WAIT", duration=interval)
+            time.sleep(interval)
 
     except Exception as e:
-        set_LED("error")
-        raise e
+        log_event("ERROR", notes=str(e))
+        set_led("off")
+        raise
+
+    total_time = time.time() - start_time
+
+    log_event("END_SEQUENCE", duration=total_time)
+    set_led("on")
+
+
+###################### JSON ENTRY POINT ###########################
+
+def run_sampler(config):
+    """
+    Called directly by your app / Flask endpoint
+    """
+
+    duration = config.get("duration", 10)
+    pres_time = config.get("pres_time", 5)
+    interval = config.get("interval", 3)
+
+    run_sequence(duration, pres_time, interval)
+
+
+###################### TEST MODE #################################
+
+def run_test():
+    set_led("sampling")
+    run_sequence(duration=10, pres_time=5, interval=3)
+    set_led("on")
+
 
 if __name__ == "__main__":
-	print("Running sampler...")
-	run_test()
+    run_test()
