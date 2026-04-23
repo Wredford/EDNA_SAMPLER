@@ -1,17 +1,17 @@
 import time
-from hardware.neopixel_led import set_led
+from hardware.led import set_led
 
-print("Testing LED...")
+print("LED test start")
 
-set_led("test")
+set_led("on")
 time.sleep(2)
 
-set_led("error")
+set_led("sampling")
+time.sleep(6)
+
+set_led("on")
 time.sleep(2)
 
-set_led("green")
-time.sleep(2)
+set_led("off")
 
-set_led("idle")
-
-print("Done")
+print("LED test done")
