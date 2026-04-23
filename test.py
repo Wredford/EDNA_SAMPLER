@@ -7,6 +7,7 @@ time.sleep(2)
 set_led("error")
 time.sleep(2)
 
-set_led("idle")
+set_led("green")
+time.sleep(2)
 
-#good?
+set_led("idle")

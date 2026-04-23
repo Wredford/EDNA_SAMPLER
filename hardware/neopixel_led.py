@@ -1,24 +1,8 @@
-from rpi_ws281x import PixelStrip, Color
+import board
+import neopixel
 
-LED_COUNT = 1
-LED_PIN = 12 #pin 32, has BCM
-LED_FREQ_HZ = 800000
-LED_DMA = 10
-LED_BRIGHTNESS = 255
-LED_INVERT = False
-LED_CHANNEL = 0
-
-strip = PixelStrip(
-    LED_COUNT,
-    LED_PIN,
-    LED_FREQ_HZ,
-    LED_DMA,
-    LED_INVERT,
-    LED_BRIGHTNESS,
-    LED_CHANNEL
-)
-
-strip.begin()
+# 1 LED on GPIO18 (physical pin 12)
+pixels = neopixel.NeoPixel(board.D18, 1, auto_write=True)
 
 def set_led(state):
     """
@@ -26,20 +10,23 @@ def set_led(state):
     - "test"  -> blue
     - "error" -> red
     - "idle"  -> off
+    - "green" -> green (optional success state)
     """
 
     if state == "test":
-        color = Color(0, 0, 255)
+        color = (0, 0, 255)
 
     elif state == "error":
-        color = Color(255, 0, 0)
+        color = (255, 0, 0)
+
+    elif state == "green":
+        color = (0, 255, 0)
 
     elif state == "idle":
-        color = Color(0, 0, 0)
+        color = (0, 0, 0)
 
     else:
-        print("Unknown LED state")
+        print("Unknown LED state:", state)
         return
 
-    strip.setPixelColor(0, color)
-    strip.show()
+    pixels[0] = color
