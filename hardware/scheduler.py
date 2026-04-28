@@ -22,15 +22,15 @@ def schedule_wakeup(sample_time):
     if target <= now:
         target += timedelta(days=1)
 
-    # Format for Witty Pi schedule script
-    wake_time = target.strftime("%H:%M")
-
     print(f"Scheduling next wake-up for {target}")
 
-    # Create temporary Witty Pi schedule file
+    hour = target.strftime("%H")
+    minute = target.strftime("%M")
+
+    # Create Witty Pi schedule file
     schedule_text = f"""BEGIN 2025-01-01 00:00:00
 END   2035-01-01 23:59:59
-ON H{wake_time[:2]} M{wake_time[3:]}
+ON H{hour} M{minute}
 OFF M1
 """
 

@@ -23,7 +23,10 @@ def should_run_now(config):
     sample_time = parse_sample_time(config.get("sample_time", "02:00"))
     current_time = datetime.datetime.now().time()
 
-    return current_time >= sample_time
+    return abs(
+    datetime.datetime.combine(datetime.date.today(), current_time) -
+    datetime.datetime.combine(datetime.date.today(), sample_time)
+    ).seconds < 60
 
 def save_config(config):
     with open(CONFIG_FILE, "w") as f:

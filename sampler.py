@@ -18,12 +18,12 @@ def log_event(event, motor="", duration=0, notes=""):
             dtnow.date(),
             dtnow.time(),
             event,
-            motor, 
+            motor,
             duration,
             notes
         ])
 
-    print(f"LOG | {event} | motor={motor} | duration={duration} min | {notes}")
+    print(f"LOG | {event} | motor={motor} | duration={duration}s | {notes}")
 
 
 ###################### MOTOR SEQUENCE ############################
@@ -37,7 +37,7 @@ MOTOR_SEQUENCE = [
 
 ###################### CORE SEQUENCE ENGINE ######################
 
-def run_sequence(sample_duration, pres_duration, interval_min):
+def run_sequence(sample_duration, pres_duration, interval_min, state=None):
 
     set_led("sampling")
     log_event("START_SEQUENCE")
@@ -48,27 +48,41 @@ def run_sequence(sample_duration, pres_duration, interval_min):
         for main, pres in MOTOR_SEQUENCE:
 
             # ---------------- MAIN MOTOR ----------------
+            if state and state.get("stop"):
+                return
+
             log_event("MAIN_START", motor=main, duration=sample_duration)
 
-            # set_motor(main, True)   # <-- COMMENTED OUT
+            # set_motor(main, True)
             time.sleep(sample_duration)
-            # set_motor(main, False)  # <-- COMMENTED OUT
+            # set_motor(main, False)
 
             log_event("MAIN_STOP", motor=main, duration=sample_duration)
 
             time.sleep(2)
 
             # ---------------- PRES MOTOR ----------------
+            if state and state.get("stop"):
+                return
+
             log_event("PRES_START", motor=pres, duration=pres_duration)
 
-            # set_motor(pres, True)   # <-- COMMENTED OUT
+            # set_motor(pres, True)
             time.sleep(pres_duration)
-            # set_motor(pres, False)  # <-- COMMENTED OUT
+            # set_motor(pres, False)
 
             log_event("PRES_STOP", motor=pres, duration=pres_duration)
 
             # ---------------- INTERVAL ----------------
-            log_event("INTERVAL_WAIT_IN_MIN", duration=interval_min, notes="Between sample stages")
+            if state and state.get("stop"):
+                return
+
+            log_event(
+                "INTERVAL_WAIT_IN_MIN",
+                duration=interval_min * 60,
+                notes="Between sample stages"
+            )
+
             time.sleep(interval_min * 60)
 
     except Exception as e:
@@ -79,19 +93,19 @@ def run_sequence(sample_duration, pres_duration, interval_min):
     total_time = time.time() - start_time
 
     log_event("END_SEQUENCE", notes=f"Total runtime: {total_time:.1f} sec")
-    set_led("on")
+    set_led("idle")
 
 
 ###################### JSON ENTRY POINT ###########################
 
 def run_sampler(config):
     """
-    Runs the full sampling sequence using values loaded from config.json. app
+    Runs the full sampling sequence using values loaded from config.json.
     """
 
     sample_duration = config.get("sample_duration", 10)
     pres_duration = config.get("pres_duration", 5)
-    interval = config.get("interval_min", 1) * 60 # To seconds from min
+    interval = config.get("interval_min", 1)
 
     run_sequence(sample_duration, pres_duration, interval)
     config["armed"] = False
@@ -100,10 +114,12 @@ def run_sampler(config):
 
 ###################### TEST MODE #################################
 
-def run_test():
+def run_test(state=None):
     set_led("sampling")
-    run_sequence(10, 5, 1)
-    set_led("on")
+
+    run_sequence(10, 5, 1, state)
+
+    set_led("idle")
 
 
 if __name__ == "__main__":
