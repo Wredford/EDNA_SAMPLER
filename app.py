@@ -4,6 +4,7 @@ from sampler import run_test, run_sampler
 import os
 import os
 from hardware.scheduler import schedule_wakeup
+import threading
 
 app = Flask(__name__)
 
@@ -72,7 +73,13 @@ def save():
 
 @app.route("/test", methods=["POST"])
 def test():
-    run_test()
+
+    def background_run():
+        run_test()
+
+    thread = threading.Thread(target=background_run)
+    thread.start()
+
     return redirect(url_for("home"))
 
 @app.route("/arm", methods=["POST"])

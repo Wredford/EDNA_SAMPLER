@@ -23,7 +23,7 @@ def log_event(event, motor="", duration=0, notes=""):
             notes
         ])
 
-    print(f"LOG | {event} | motor={motor} | duration={duration}s | {notes}")
+    print(f"LOG | {event} | motor={motor} | duration={duration} min | {notes}")
 
 
 ###################### MOTOR SEQUENCE ############################
