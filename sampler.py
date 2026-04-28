@@ -47,10 +47,13 @@ def run_sequence(sample_duration, pres_duration, interval_min, state=None):
     try:
         for main, pres in MOTOR_SEQUENCE:
 
-            # ---------------- MAIN MOTOR ----------------
+            # ---------------- STOP CHECK ----------------
             if state and state.get("stop"):
+                log_event("STOP_REQUESTED")
+                set_led("off")
                 return
 
+            # ---------------- MAIN MOTOR ----------------
             log_event("MAIN_START", motor=main, duration=sample_duration)
 
             # set_motor(main, True)
@@ -61,10 +64,13 @@ def run_sequence(sample_duration, pres_duration, interval_min, state=None):
 
             time.sleep(2)
 
-            # ---------------- PRES MOTOR ----------------
+            # ---------------- STOP CHECK ----------------
             if state and state.get("stop"):
+                log_event("STOP_REQUESTED")
+                set_led("off")
                 return
 
+            # ---------------- PRES MOTOR ----------------
             log_event("PRES_START", motor=pres, duration=pres_duration)
 
             # set_motor(pres, True)
@@ -73,12 +79,15 @@ def run_sequence(sample_duration, pres_duration, interval_min, state=None):
 
             log_event("PRES_STOP", motor=pres, duration=pres_duration)
 
-            # ---------------- INTERVAL ----------------
+            # ---------------- STOP CHECK ----------------
             if state and state.get("stop"):
+                log_event("STOP_REQUESTED")
+                set_led("off")
                 return
 
+            # ---------------- INTERVAL ----------------
             log_event(
-                "INTERVAL_WAIT_IN_MIN",
+                "INTERVAL_WAIT",
                 duration=interval_min * 60,
                 notes="Between sample stages"
             )
@@ -93,21 +102,19 @@ def run_sequence(sample_duration, pres_duration, interval_min, state=None):
     total_time = time.time() - start_time
 
     log_event("END_SEQUENCE", notes=f"Total runtime: {total_time:.1f} sec")
-    set_led("idle")
+    set_led("on")
 
 
 ###################### JSON ENTRY POINT ###########################
 
 def run_sampler(config):
-    """
-    Runs the full sampling sequence using values loaded from config.json.
-    """
 
     sample_duration = config.get("sample_duration", 10)
     pres_duration = config.get("pres_duration", 5)
     interval = config.get("interval_min", 1)
 
-    run_sequence(sample_duration, pres_duration, interval)
+    run_sequence(sample_duration, pres_duration, interval, state=None)
+
     config["armed"] = False
     return config
 
@@ -119,7 +126,7 @@ def run_test(state=None):
 
     run_sequence(10, 5, 1, state)
 
-    set_led("idle")
+    set_led("on")
 
 
 if __name__ == "__main__":
