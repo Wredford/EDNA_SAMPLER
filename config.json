@@ -1,7 +1,7 @@
 {
   "sample_time": "02:00",
   "sample_duration": 10,
-  "interval": 1,
+  "interval_min": 1,
   "pres_duration": 5,
   "armed": false
 }

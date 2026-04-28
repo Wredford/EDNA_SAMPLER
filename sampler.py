@@ -9,7 +9,7 @@ from hardware.motors import set_motor
 LOG_FILE = "logs/data.csv"
 
 ###################### LOGGING ################################
-def log_event(event, pres_duration=0, sample_duration=0, notes=""):
+def log_event(event, motor="", duration=0, notes=""):
     dtnow = datetime.datetime.now()
 
     with open(LOG_FILE, "a", newline="") as f:
@@ -18,12 +18,12 @@ def log_event(event, pres_duration=0, sample_duration=0, notes=""):
             dtnow.date(),
             dtnow.time(),
             event,
-            pres_duration,
-            sample_duration,
+            motor, 
+            duration,
             notes
         ])
 
-    print(f"LOG: {event}, Preservative Duration={pres_duration}, Sample Duration={sample_duration}, Notes={notes}")
+    print(f"LOG | {event} | motor={motor} | duration={duration}s | {notes}")
 
 
 ###################### MOTOR SEQUENCE ############################
@@ -37,7 +37,7 @@ MOTOR_SEQUENCE = [
 
 ###################### CORE SEQUENCE ENGINE ######################
 
-def run_sequence(sample_duration, pres_duration, interval):
+def run_sequence(sample_duration, pres_duration, interval_min):
 
     set_led("sampling")
     log_event("START_SEQUENCE")
@@ -48,28 +48,28 @@ def run_sequence(sample_duration, pres_duration, interval):
         for main, pres in MOTOR_SEQUENCE:
 
             # ---------------- MAIN MOTOR ----------------
-            log_event("MAIN_START", sample_duration=sample_duration, notes=main)
+            log_event("MAIN_START", motor=main, duration=sample_duration)
 
             # set_motor(main, True)   # <-- COMMENTED OUT
             time.sleep(sample_duration)
             # set_motor(main, False)  # <-- COMMENTED OUT
 
-            log_event("MAIN_STOP", sample_duration=sample_duration, notes=main)
+            log_event("MAIN_STOP", motor=main, duration=sample_duration)
 
             time.sleep(2)
 
             # ---------------- PRES MOTOR ----------------
-            log_event("PRES_START", pres_duration=pres_duration, notes=pres)
+            log_event("PRES_START", motor=pres, duration=pres_duration)
 
             # set_motor(pres, True)   # <-- COMMENTED OUT
             time.sleep(pres_duration)
             # set_motor(pres, False)  # <-- COMMENTED OUT
 
-            log_event("PRES_STOP", pres_duration=pres_duration, notes=pres)
+            log_event("PRES_STOP", motor=pres, duration=pres_duration)
 
             # ---------------- INTERVAL ----------------
-            log_event("INTERVAL_WAIT", sample_duration=interval, notes="Between sample stages")
-            time.sleep(interval)
+            log_event("INTERVAL_WAIT_IN_MIN", duration=interval_min, notes="Between sample stages")
+            time.sleep(interval_min * 60)
 
     except Exception as e:
         log_event("ERROR", notes=str(e))
@@ -91,17 +91,18 @@ def run_sampler(config):
 
     sample_duration = config.get("sample_duration", 10)
     pres_duration = config.get("pres_duration", 5)
-    interval = config.get("interval", 1) * 60  # convert minutes to seconds
+    interval = config.get("interval_min", 1) * 60 # To seconds from min
 
     run_sequence(sample_duration, pres_duration, interval)
     config["armed"] = False
+    return config
 
 
 ###################### TEST MODE #################################
 
 def run_test():
     set_led("sampling")
-    run_sequence(sample_duration=10, pres_duration=5, interval=3)
+    run_sequence(10, 5, 1)
     set_led("on")
 
 

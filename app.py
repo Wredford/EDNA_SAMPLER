@@ -1,6 +1,6 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, redirect, url_for
 import json
-from sampler import run_test, run_sample
+from sampler import run_test, run_sampler
 import os
 import os
 from hardware.scheduler import schedule_wakeup
@@ -72,8 +72,8 @@ def save():
 
 @app.route("/test", methods=["POST"])
 def test():
-	run_test()
-	return "Test Run Started! <br><a href='/'>Back</a>"
+    run_test()
+    return redirect(url_for("home"))
 
 @app.route("/arm", methods=["POST"])
 def arm():

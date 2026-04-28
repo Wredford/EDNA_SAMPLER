@@ -25,16 +25,30 @@ def should_run_now(config):
 
     return current_time >= sample_time
 
+def save_config(config):
+    with open(CONFIG_FILE, "w") as f:
+        json.dump(config, f, indent=4)
 
 def main():
     config = load_config()
 
-    if should_run_now(config):
-        print("Scheduled sample time reached. Starting sampling sequence.")
-        run_sampler(config)
-    else:
-        print("Sampler not armed or scheduled time has not been reached.")
+    # 1. Must be armed
+    if not config.get("armed", False):
+        print("Not armed. Exiting.")
+        return
 
+    # 2. Check schedule
+    if not should_run_now(config):
+        print("Armed, but not scheduled time yet.")
+        return
+
+    # 3. Run sampler ONCE
+    print("Scheduled sample time reached. Starting sampling sequence...")
+
+    config = run_sampler(config)
+
+    # 4. Persist updated state (armed -> False)
+    save_config(config)
 
 if __name__ == "__main__":
     main()
