@@ -9,7 +9,7 @@ from hardware.motors import set_motor
 LOG_FILE = "logs/data.csv"
 
 ###################### LOGGING ################################
-def log_event(event, pres_time=0, duration=0, notes=""):
+def log_event(event, pres_duration=0, sample_duration=0, notes=""):
     dtnow = datetime.datetime.now()
 
     with open(LOG_FILE, "a", newline="") as f:
@@ -18,12 +18,12 @@ def log_event(event, pres_time=0, duration=0, notes=""):
             dtnow.date(),
             dtnow.time(),
             event,
-            pres_time,
-            duration,
+            pres_duration,
+            sample_duration,
             notes
         ])
 
-    print(f"LOG: {event}, Flow={pres_time}, Duration={duration}, Notes={notes}")
+    print(f"LOG: {event}, Preservative Duration={pres_duration}, Sample Duration={sample_duration}, Notes={notes}")
 
 
 ###################### MOTOR SEQUENCE ############################
@@ -37,7 +37,7 @@ MOTOR_SEQUENCE = [
 
 ###################### CORE SEQUENCE ENGINE ######################
 
-def run_sequence(duration, pres_time, interval):
+def run_sequence(sample_duration, pres_duration, interval):
 
     set_led("sampling")
     log_event("START_SEQUENCE")
@@ -48,27 +48,27 @@ def run_sequence(duration, pres_time, interval):
         for main, pres in MOTOR_SEQUENCE:
 
             # ---------------- MAIN MOTOR ----------------
-            log_event("MAIN_START", duration=duration, notes=main)
+            log_event("MAIN_START", sample_duration=sample_duration, notes=main)
 
             # set_motor(main, True)   # <-- COMMENTED OUT
-            time.sleep(duration)
+            time.sleep(sample_duration)
             # set_motor(main, False)  # <-- COMMENTED OUT
 
-            log_event("MAIN_STOP", duration=duration, notes=main)
+            log_event("MAIN_STOP", sample_duration=sample_duration, notes=main)
 
             time.sleep(2)
 
             # ---------------- PRES MOTOR ----------------
-            log_event("PRES_START", pres_time=pres_time, notes=pres)
+            log_event("PRES_START", pres_duration=pres_duration, notes=pres)
 
             # set_motor(pres, True)   # <-- COMMENTED OUT
-            time.sleep(pres_time)
+            time.sleep(pres_duration)
             # set_motor(pres, False)  # <-- COMMENTED OUT
 
-            log_event("PRES_STOP", pres_time=pres_time, notes=pres)
+            log_event("PRES_STOP", pres_duration=pres_duration, notes=pres)
 
             # ---------------- INTERVAL ----------------
-            log_event("INTERVAL_WAIT", duration=interval)
+            log_event("INTERVAL_WAIT", sample_duration=interval, notes="Between sample stages")
             time.sleep(interval)
 
     except Exception as e:
@@ -78,7 +78,7 @@ def run_sequence(duration, pres_time, interval):
 
     total_time = time.time() - start_time
 
-    log_event("END_SEQUENCE", duration=total_time)
+    log_event("END_SEQUENCE", notes=f"Total runtime: {total_time:.1f} sec")
     set_led("on")
 
 
@@ -86,21 +86,22 @@ def run_sequence(duration, pres_time, interval):
 
 def run_sampler(config):
     """
-    Called directly by your app / Flask endpoint
+    Runs the full sampling sequence using values loaded from config.json. app
     """
 
-    duration = config.get("duration", 10)
-    pres_time = config.get("pres_time", 5)
-    interval = config.get("interval", 3)
+    sample_duration = config.get("sample_duration", 10)
+    pres_duration = config.get("pres_duration", 5)
+    interval = config.get("interval", 1) * 60  # convert minutes to seconds
 
-    run_sequence(duration, pres_time, interval)
+    run_sequence(sample_duration, pres_duration, interval)
+    config["armed"] = False
 
 
 ###################### TEST MODE #################################
 
 def run_test():
     set_led("sampling")
-    run_sequence(duration=10, pres_time=5, interval=3)
+    run_sequence(sample_duration=10, pres_duration=5, interval=3)
     set_led("on")
 
 

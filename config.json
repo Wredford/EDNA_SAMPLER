@@ -1,5 +1,7 @@
 {
-    "sample_duration": 5.0,
-    "interval_hours": 3.0,
-    "pres_time": 5.0
+  "sample_time": "02:00",
+  "sample_duration": 10,
+  "interval": 1,
+  "pres_duration": 5,
+  "armed": false
 }
