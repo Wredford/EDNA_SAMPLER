@@ -1,4 +1,9 @@
 from datetime import datetime, timedelta
+import os
+
+
+WITTYPI_DIR = "/home/ore653/wittypi"
+SCHEDULE_FILE = f"{WITTYPI_DIR}/schedules/EDNA_SCHEDULE.wpi"
 
 
 def schedule_wakeup(sample_time):
@@ -25,10 +30,12 @@ ON    M15
 OFF   M1440
 """
 
-    schedule_file = "/home/pi/wittypi/schedules/EDNA_SCHEDULE.wpi"
+    # 🔧 ensure directory exists (this prevents your crash)
+    os.makedirs(f"{WITTYPI_DIR}/schedules", exist_ok=True)
 
-    with open(schedule_file, "w") as f:
+    # write schedule
+    with open(SCHEDULE_FILE, "w") as f:
         f.write(schedule_text)
 
-    print(f"[Scheduler] Created schedule: {schedule_file}")
+    print(f"[Scheduler] Created schedule: {SCHEDULE_FILE}")
     print(f"[Scheduler] Wake at: {target}")
