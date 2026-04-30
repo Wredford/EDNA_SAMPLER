@@ -89,15 +89,20 @@ def test():
     if test_state["running"]:
         return "Already running.<br><a href='/'>Back</a>"
 
+    config = load_config()
+
     def background_run():
-        test_state["running"] = True
-        test_state["stop"] = False
+        try:
+            test_state["running"] = True
+            test_state["stop"] = False
 
-        run_test(test_state)
+            run_test(config, test_state)
 
-        test_state["running"] = False
+        finally:
+            test_state["running"] = False
+            test_state["stop"] = False
 
-    thread = threading.Thread(target=background_run)
+    thread = threading.Thread(target=background_run, daemon=True)
     thread.start()
 
     return redirect(url_for("home"))

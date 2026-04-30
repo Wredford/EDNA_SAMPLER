@@ -121,13 +121,32 @@ def run_sampler(config):
 
 ###################### TEST MODE #################################
 
-def run_test(state=None):
-    set_led("sampling")
+def run_test(config, state=None):
+    """
+    Run a single test sampling cycle using the provided configuration.
+    """
 
-    run_sequence(10, 5, 1, state)
+    sample_duration = config.get("sample_duration", 10)
+    pres_duration = config.get("pres_duration", 5)
+    interval_min = config.get("interval_min", 1)
 
-    set_led("on")
+    try:
+        run_sequence(
+            sample_duration=sample_duration,
+            pres_duration=pres_duration,
+            interval_min=interval_min,
+            state=state
+        )
+
+    finally:
+        # Ensure LED returns to idle even if stopped or interrupted
+        set_led("on")
 
 
 if __name__ == "__main__":
-    run_test()
+    test_config = {
+        "sample_duration": 10,
+        "pres_duration": 5,
+        "interval_min": 1
+    }
+    run_test(test_config)

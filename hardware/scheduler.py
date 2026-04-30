@@ -1,43 +1,34 @@
-import os
 from datetime import datetime, timedelta
 
 
 def schedule_wakeup(sample_time):
     """
-    Program Witty Pi to wake up at the next occurrence of sample_time.
-
-    sample_time format: "HH:MM" (24-hour)
+    Create a one-shot Witty Pi schedule for the next sample event.
     """
 
     now = datetime.now()
 
-    # Parse desired wake time
     target = datetime.strptime(sample_time, "%H:%M").replace(
         year=now.year,
         month=now.month,
         day=now.day
     )
 
-    # If that time has already passed today, schedule for tomorrow
     if target <= now:
         target += timedelta(days=1)
 
-    print(f"Scheduling next wake-up for {target}")
+    end_time = target + timedelta(minutes=15)
 
-    hour = target.strftime("%H")
-    minute = target.strftime("%M")
-
-    # Create Witty Pi schedule file
-    schedule_text = f"""BEGIN 2025-01-01 00:00:00
-END   2035-01-01 23:59:59
-ON H{hour} M{minute}
-OFF M1
+    schedule_text = f"""BEGIN {target.strftime('%Y-%m-%d %H:%M:%S')}
+END   {end_time.strftime('%Y-%m-%d %H:%M:%S')}
+ON    M15
+OFF   M1440
 """
 
-    schedule_file = "/home/pi/wittypi/schedules/next_sample.wpi"
+    schedule_file = "/home/pi/wittypi/schedules/EDNA_SCHEDULE.wpi"
 
     with open(schedule_file, "w") as f:
         f.write(schedule_text)
 
-    # Apply schedule
-    os.system(f"sudo /home/pi/wittypi/runScript.sh {schedule_file}")
+    print(f"[Scheduler] Created schedule: {schedule_file}")
+    print(f"[Scheduler] Wake at: {target}")
