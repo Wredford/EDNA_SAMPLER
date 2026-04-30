@@ -1,14 +1,15 @@
 from datetime import datetime, timedelta
 import os
-
+import subprocess
 
 WITTYPI_DIR = "/home/ore653/wittypi"
 SCHEDULE_FILE = f"{WITTYPI_DIR}/schedules/EDNA_SCHEDULE.wpi"
+RUN_SCRIPT = f"{WITTYPI_DIR}/runScript.sh"
 
 
 def schedule_wakeup(sample_time):
     """
-    Create a one-shot Witty Pi schedule for the next sample event.
+    Create and apply a one-shot Witty Pi schedule.
     """
 
     now = datetime.now()
@@ -30,12 +31,18 @@ ON    M15
 OFF   M1440
 """
 
-    # 🔧 ensure directory exists (this prevents your crash)
     os.makedirs(f"{WITTYPI_DIR}/schedules", exist_ok=True)
 
-    # write schedule
     with open(SCHEDULE_FILE, "w") as f:
         f.write(schedule_text)
 
     print(f"[Scheduler] Created schedule: {SCHEDULE_FILE}")
     print(f"[Scheduler] Wake at: {target}")
+
+    # Apply schedule to Witty Pi
+    subprocess.run(
+        [RUN_SCRIPT, SCHEDULE_FILE],
+        check=True
+    )
+
+    print("[Scheduler] Schedule applied to Witty Pi RTC")
