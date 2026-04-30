@@ -24,8 +24,8 @@ def schedule_wakeup(sample_time):
     if target <= now:
         target += timedelta(days=1)
 
-    # give a short active window for sampling (adjust minutes value if needed)
-    end_time = target + timedelta(minutes=1)
+    # give a short active window for sampling (adjust minutes value to be close to your deployment runtime. can base off test run time)
+    end_time = target + timedelta(minutes=15)
 
     schedule_text = f"""BEGIN {target.strftime('%Y-%m-%d %H:%M:%S')}
 END   {end_time.strftime('%Y-%m-%d %H:%M:%S')}
