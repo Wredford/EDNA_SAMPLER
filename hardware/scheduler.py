@@ -5,43 +5,53 @@ WITTY_PI_DIR = "/home/ore653/wittypi"
 SCHEDULE_FILE = f"{WITTY_PI_DIR}/schedule.wpi"
 RUN_SCRIPT = f"{WITTY_PI_DIR}/runScript.sh"
 
+MOTOR_CYCLES = 3
 
-def schedule_wakeup(sample_time):
+
+def schedule_wakeup(sample_time, sample_duration, pres_duration, interval_min):
     """
-    Create and apply a Witty Pi schedule for next wake event.
-    sample_time format: "HH:MM"
+    Witty Pi schedule:
+    - Wake (ON) at sample_time
+    - Run full experiment
+    - Force OFF after computed runtime + buffer
     """
 
     now = datetime.now()
 
-    # build target datetime (today or tomorrow)
-    target = datetime.strptime(sample_time, "%H:%M").replace(
+    # ---------------- WAKE TIME ----------------
+    wake = datetime.strptime(sample_time, "%H:%M").replace(
         year=now.year,
         month=now.month,
         day=now.day
     )
 
-    if target <= now:
-        target += timedelta(days=1)
+    if wake <= now:
+        wake += timedelta(days=1)
 
-    # give a short active window for sampling (adjust minutes value to be close to your deployment runtime. can base off test run time)
-    end_time = target + timedelta(minutes=15)
+    interval_sec = interval_min * 60
 
-    schedule_text = f"""BEGIN {target.strftime('%Y-%m-%d %H:%M:%S')}
-END   {end_time.strftime('%Y-%m-%d %H:%M:%S')}
-ON    M15
-OFF   M1440
+    # ---------------- RUNTIME ----------------
+    cycle_time = sample_duration + pres_duration + interval_sec + 2
+    total_runtime = cycle_time * MOTOR_CYCLES
+
+    shutdown = wake + timedelta(seconds=total_runtime + 120)
+
+    # ---------------- WPI SCHEDULE ----------------
+    schedule_text = f"""BEGIN {wake.strftime('%Y-%m-%d %H:%M:%S')}
+END   {shutdown.strftime('%Y-%m-%d %H:%M:%S')}
+
+ON    H{wake.strftime('%H')} M{wake.strftime('%M')}
+OFF   H{shutdown.strftime('%H')} M{shutdown.strftime('%M')}
 """
 
-    # overwrite ACTIVE schedule file (important fix)
+    # write active schedule file
     with open(SCHEDULE_FILE, "w") as f:
         f.write(schedule_text)
 
-    print(f"[Scheduler] Wrote schedule to {SCHEDULE_FILE}")
-    print(f"[Scheduler] Wake time: {target}")
+    print(f"[Scheduler] Wake: {wake}")
+    print(f"[Scheduler] Shutdown: {shutdown}")
 
-    # immediately apply schedule to RTC
-    cmd = f"sudo {RUN_SCRIPT} {SCHEDULE_FILE}"
-    os.system(cmd)
+    # apply to RTC
+    os.system(f"sudo {RUN_SCRIPT} {SCHEDULE_FILE}")
 
-    print("[Scheduler] Schedule applied to Witty Pi RTC")
+    print("[Scheduler] Witty Pi schedule applied")

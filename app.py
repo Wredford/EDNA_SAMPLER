@@ -120,8 +120,12 @@ def arm():
     config["armed"] = True
     save_config(config)
 
-    schedule_wakeup(config["sample_time"])
-    # os.system("sudo shutdown -h now")
+    schedule_wakeup(
+        config["sample_time"],
+        config["sample_duration"],
+        config["pres_duration"],
+        config["interval_min"]
+    )
 
     return "System armed for next scheduled sample.<br><a href='/'>Back</a>"
 
