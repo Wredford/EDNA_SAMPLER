@@ -1,19 +1,20 @@
 from datetime import datetime, timedelta
 import os
-import subprocess
 
-WITTYPI_DIR = "/home/ore653/wittypi"
-SCHEDULE_FILE = f"{WITTYPI_DIR}/schedules/EDNA_SCHEDULE.wpi"
-RUN_SCRIPT = f"{WITTYPI_DIR}/runScript.sh"
+WITTY_PI_DIR = "/home/ore653/wittypi"
+SCHEDULE_FILE = f"{WITTY_PI_DIR}/schedule.wpi"
+RUN_SCRIPT = f"{WITTY_PI_DIR}/runScript.sh"
 
 
 def schedule_wakeup(sample_time):
     """
-    Create and apply a one-shot Witty Pi schedule.
+    Create and apply a Witty Pi schedule for next wake event.
+    sample_time format: "HH:MM"
     """
 
     now = datetime.now()
 
+    # build target datetime (today or tomorrow)
     target = datetime.strptime(sample_time, "%H:%M").replace(
         year=now.year,
         month=now.month,
@@ -23,7 +24,8 @@ def schedule_wakeup(sample_time):
     if target <= now:
         target += timedelta(days=1)
 
-    end_time = target + timedelta(minutes=15)
+    # give a short active window for sampling (adjust minutes value if needed)
+    end_time = target + timedelta(minutes=1)
 
     schedule_text = f"""BEGIN {target.strftime('%Y-%m-%d %H:%M:%S')}
 END   {end_time.strftime('%Y-%m-%d %H:%M:%S')}
@@ -31,18 +33,15 @@ ON    M15
 OFF   M1440
 """
 
-    os.makedirs(f"{WITTYPI_DIR}/schedules", exist_ok=True)
-
+    # overwrite ACTIVE schedule file (important fix)
     with open(SCHEDULE_FILE, "w") as f:
         f.write(schedule_text)
 
-    print(f"[Scheduler] Created schedule: {SCHEDULE_FILE}")
-    print(f"[Scheduler] Wake at: {target}")
+    print(f"[Scheduler] Wrote schedule to {SCHEDULE_FILE}")
+    print(f"[Scheduler] Wake time: {target}")
 
-    # Apply schedule to Witty Pi
-    subprocess.run(
-        [RUN_SCRIPT, SCHEDULE_FILE],
-        check=True
-    )
+    # immediately apply schedule to RTC
+    cmd = f"sudo {RUN_SCRIPT} {SCHEDULE_FILE}"
+    os.system(cmd)
 
     print("[Scheduler] Schedule applied to Witty Pi RTC")
