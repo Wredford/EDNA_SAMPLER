@@ -1,9 +1,12 @@
 from flask import Flask, request, jsonify, redirect, url_for
 import json
-from sampler import run_test, run_sampler
+from sampler import run_test, run_sampler, prime_preservative_pumps
 import os
 from hardware.scheduler import schedule_wakeup
 import threading
+from hardware.led import set_led
+
+set_led("on")
 
 app = Flask(__name__)
 
@@ -53,6 +56,12 @@ def home():
 
     <br>
 
+    <form method="POST" action="/prime">
+        <input type="submit" value="Prime Preservative Pumps">
+    </form>
+
+    <br>
+
     <form method="POST" action="/test">
         <input type="submit" value="Test Run">
     </form>
@@ -81,6 +90,26 @@ def save():
 
     save_config(data)
     return "Settings saved!<br><a href='/'>Back</a>"
+
+@app.route("/prime", methods=["POST"])
+def prime():
+
+    if test_state["running"]:
+        return "Cannot prime while test is running.<br><a href='/'>Back</a>"
+
+    config = load_config()
+
+    def background_run():
+        try:
+            test_state["running"] = True
+            prime_preservative_pumps(config)
+        finally:
+            test_state["running"] = False
+
+    thread = threading.Thread(target=background_run, daemon=True)
+    thread.start()
+
+    return redirect(url_for("home"))
 
 
 @app.route("/test", methods=["POST"])

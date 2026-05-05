@@ -31,6 +31,7 @@ def set_led(state):
 
     global _state, _blink_thread, _stop_blink
     _state = state
+    print(f"[LED] Setting state: {state}")
 
     # stop any blinking first
     _stop_blink = True

@@ -50,15 +50,15 @@ def run_sequence(sample_duration, pres_duration, interval_min, state=None):
             # ---------------- STOP CHECK ----------------
             if state and state.get("stop"):
                 log_event("STOP_REQUESTED")
-                set_led("off")
+                set_led("on")
                 return
 
             # ---------------- MAIN MOTOR ----------------
             log_event("MAIN_START", motor=main, duration=sample_duration)
 
-            # set_motor(main, True)
+            set_motor(main, True)
             time.sleep(sample_duration)
-            # set_motor(main, False)
+            set_motor(main, False)
 
             log_event("MAIN_STOP", motor=main, duration=sample_duration)
 
@@ -67,22 +67,22 @@ def run_sequence(sample_duration, pres_duration, interval_min, state=None):
             # ---------------- STOP CHECK ----------------
             if state and state.get("stop"):
                 log_event("STOP_REQUESTED")
-                set_led("off")
+                set_led("on")
                 return
 
             # ---------------- PRES MOTOR ----------------
             log_event("PRES_START", motor=pres, duration=pres_duration)
 
-            # set_motor(pres, True)
+            set_motor(pres, True)
             time.sleep(pres_duration)
-            # set_motor(pres, False)
+            set_motor(pres, False)
 
             log_event("PRES_STOP", motor=pres, duration=pres_duration)
 
             # ---------------- STOP CHECK ----------------
             if state and state.get("stop"):
                 log_event("STOP_REQUESTED")
-                set_led("off")
+                set_led("on")
                 return
 
             # ---------------- INTERVAL ----------------
@@ -96,7 +96,7 @@ def run_sequence(sample_duration, pres_duration, interval_min, state=None):
 
     except Exception as e:
         log_event("ERROR", notes=str(e))
-        set_led("off")
+        set_led("on")
         raise
 
     total_time = time.time() - start_time
@@ -138,12 +138,49 @@ def run_test(config, state=None):
             state=state
         )
 
+    
     finally:
         # Ensure LED returns to idle even if stopped or interrupted
         set_led("on")
 
 
+###################### PRIME MODE #################################
+
+def prime_preservative_pumps(config):
+    """
+    Run preservative pumps in sequence for priming.
+    """
+
+    pres_duration = config.get("pres_duration", 5)
+
+    set_led("sampling")
+    log_event("PRIME_START", notes="Priming preservative pumps")
+
+    try:
+        for pres in ["pres1", "pres2", "pres3"]:
+
+            log_event("PRES_PRIME_START", motor=pres, duration=pres_duration)
+
+            set_motor(pres, True)
+            time.sleep(pres_duration)
+            set_motor(pres, False)
+
+            log_event("PRES_PRIME_STOP", motor=pres, duration=pres_duration)
+
+            time.sleep(1)  # small gap between pumps. THIS FUNCTION DOES NOT UTILIE INTERVAL INPUT
+
+    except Exception as e:
+        log_event("ERROR", notes=str(e))
+        set_led("on")
+        raise
+
+    log_event("PRIME_END")
+    set_led("on")
+
+
 if __name__ == "__main__":
+    # This only sets to these configs if sampler.py is run directly instead of from the app (which you shouldnt do)
+    print("Running standalone test with default values")
     test_config = {
         "sample_duration": 10,
         "pres_duration": 5,

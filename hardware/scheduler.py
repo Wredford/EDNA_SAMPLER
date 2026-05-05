@@ -9,12 +9,6 @@ MOTOR_CYCLES = 3
 
 
 def schedule_wakeup(sample_time, sample_duration, pres_duration, interval_min):
-    """
-    Witty Pi schedule:
-    - Wake (ON) at sample_time
-    - Run full experiment
-    - Force OFF after computed runtime + buffer
-    """
 
     now = datetime.now()
 
@@ -30,28 +24,29 @@ def schedule_wakeup(sample_time, sample_duration, pres_duration, interval_min):
 
     interval_sec = interval_min * 60
 
-    # ---------------- RUNTIME ----------------
+    # ---------------- RUNTIME ESTIMATE ----------------
     cycle_time = sample_duration + pres_duration + interval_sec + 2
     total_runtime = cycle_time * MOTOR_CYCLES
 
     shutdown = wake + timedelta(seconds=total_runtime + 120)
 
-    # ---------------- WPI SCHEDULE ----------------
-    schedule_text = f"""BEGIN {wake.strftime('%Y-%m-%d %H:%M:%S')}
-END   {shutdown.strftime('%Y-%m-%d %H:%M:%S')}
+    # ---------------- WPI FILE ----------------
+    schedule_text = f"""BEGIN 2026-01-01 00:00:00
+END   2035-01-01 23:59:59
 
-ON    H{wake.strftime('%H')} M{wake.strftime('%M')}
-OFF   H{shutdown.strftime('%H')} M{shutdown.strftime('%M')}
+OFF M2
+ON  H{wake.strftime('%H')} M{wake.strftime('%M')}
+OFF M{int(total_runtime / 60) + 2}
 """
 
-    # write active schedule file
+    # write file
     with open(SCHEDULE_FILE, "w") as f:
         f.write(schedule_text)
 
     print(f"[Scheduler] Wake: {wake}")
-    print(f"[Scheduler] Shutdown: {shutdown}")
+    print(f"[Scheduler] Shutdown offset: {shutdown}")
 
-    # apply to RTC
-    os.system(f"sudo {RUN_SCRIPT} {SCHEDULE_FILE}")
+    # ---------------- APPLY TO WITTY PI!!!!!!! ----------------                        THIS LINE IS KEY TO THE SCHEDULING WORKING
+    os.system(f"cd {WITTY_PI_DIR} && sudo ./runScript.sh")
 
     print("[Scheduler] Witty Pi schedule applied")
