@@ -7,7 +7,6 @@ RUN_SCRIPT = f"{WITTY_PI_DIR}/runScript.sh"
 
 MOTOR_CYCLES = 3
 
-
 def schedule_wakeup(sample_time, sample_duration, pres_duration, interval_min):
 
     now = datetime.now()
@@ -22,45 +21,29 @@ def schedule_wakeup(sample_time, sample_duration, pres_duration, interval_min):
     if wake <= now:
         wake += timedelta(days=1)
 
-    # -------- RUNTIME --------
-    interval_sec = interval_min * 60
-    cycle_time = sample_duration + pres_duration + interval_sec + 2
-    total_runtime = cycle_time * MOTOR_CYCLES
-
-    shutdown = wake + timedelta(seconds=total_runtime + 120)
-
-    # -------- FORMAT TIMES --------
-    wake_h = wake.strftime("%H")
-    wake_m = wake.strftime("%M")
-
     wake_offset = int((wake - now).total_seconds() / 60)
-    shutdown_offset = wake_offset + int(total_runtime / 60)
 
-    ########### DISPLAY VALUES FOR JOURNALCTL ###################
+    # -------- DEBUG --------
     print("\n========== SCHEDULER DEBUG ==========")
     print(f"Now:        {now}")
-    print(f"Sample time:{sample_time}")
     print(f"Wake time:  {wake}")
-    print(f"Shutdown:   {shutdown}")
-    print(f"Wake offset:  {wake_offset}")
-    print(f"Shutdown offset:   {shutdown_offset}")
+    print(f"Wake offset (min): {wake_offset}")
     print("=====================================\n")
 
-    # -------- SCHEDULE --------
+    # -------- MINIMAL WITTY PI SCHEDULE --------
     schedule_text = f"""BEGIN {now.strftime('%Y-%m-%d %H:%M:%S')}
 END   2035-12-31 23:59:59
 
-ON  M{wake_offset}
-OFF M{shutdown_offset}
+ON M{wake_offset}
+OFF WAIT
 """
 
-    # write file
-    with open(SCHEDULE_FILE, "w") as f:
+    schedule_file = "/home/ore653/wittypi/schedule.wpi"
+
+    with open(schedule_file, "w") as f:
         f.write(schedule_text)
 
-    print(f"[Scheduler] Wake: {wake}")
-    print(f"[Scheduler] Shutdown: {shutdown}")
-
+    print("[Scheduler] Witty Pi configured for wake only")
 
     # ---------------- APPLY TO WITTY PI!!!!!!! ----------------                        THIS LINE IS KEY TO THE SCHEDULING WORKING
     os.system(f"cd {WITTY_PI_DIR} && sudo ./runScript.sh")
