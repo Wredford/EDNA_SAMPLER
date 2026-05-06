@@ -21,6 +21,11 @@ def schedule_wakeup(sample_time, sample_duration, pres_duration, interval_min):
     if wake <= now:
         wake += timedelta(days=1)
 
+    # -------- SIMPLE RUNTIME --------
+    # Witty Pi only needs ONE continuous runtime window
+    runtime_sec = sample_duration + pres_duration + 2
+    runtime_min = max(1, int(runtime_sec / 60))
+
     wake_offset = int((wake - now).total_seconds() / 60)
 
     # -------- DEBUG --------
@@ -28,14 +33,16 @@ def schedule_wakeup(sample_time, sample_duration, pres_duration, interval_min):
     print(f"Now:        {now}")
     print(f"Wake time:  {wake}")
     print(f"Wake offset (min): {wake_offset}")
+    print(f"Runtime (min): {runtime_min}")
     print("=====================================\n")
 
     # -------- MINIMAL WITTY PI SCHEDULE --------
     schedule_text = f"""BEGIN {now.strftime('%Y-%m-%d %H:%M:%S')}
 END   2035-12-31 23:59:59
 
+OFF M1
 ON M{wake_offset}
-OFF WAIT
+OFF M{runtime_min}
 """
 
     schedule_file = "/home/ore653/wittypi/schedule.wpi"
