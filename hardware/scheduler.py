@@ -22,11 +22,10 @@ def schedule_wakeup(sample_time, sample_duration, pres_duration, interval_min):
         wake += timedelta(days=1)
 
     # -------- SIMPLE RUNTIME --------
-    # Witty Pi only needs ONE continuous runtime window
     runtime_sec = sample_duration + pres_duration + 2
     runtime_min = max(1, int(runtime_sec / 60))
 
-    wake_offset = int((wake - now).total_seconds() / 60)
+    wake_offset = max(1, int((wake - now).total_seconds() / 60))
 
     # -------- DEBUG --------
     print("\n========== SCHEDULER DEBUG ==========")
@@ -36,13 +35,15 @@ def schedule_wakeup(sample_time, sample_duration, pres_duration, interval_min):
     print(f"Runtime (min): {runtime_min}")
     print("=====================================\n")
 
-    # -------- MINIMAL WITTY PI SCHEDULE --------
-    schedule_text = f"""BEGIN {now.strftime('%Y-%m-%d %H:%M:%S')}
+    # -------- FIXED WITTY PI SCHEDULE --------
+    schedule_text = f"""BEGIN {now.strftime('%Y-%m-%d 00:00:00')}
 END   2035-12-31 23:59:59
 
-OFF M1
-ON M{wake_offset}
-OFF M{runtime_min}
+ON M1
+OFF M{wake_offset}
+
+ON M{runtime_min}
+OFF M1 WAIT
 """
 
     schedule_file = "/home/ore653/wittypi/schedule.wpi"
@@ -50,9 +51,7 @@ OFF M{runtime_min}
     with open(schedule_file, "w") as f:
         f.write(schedule_text)
 
-    print("[Scheduler] Witty Pi configured for wake only")
-
-    # ---------------- APPLY TO WITTY PI!!!!!!! ----------------                        THIS LINE IS KEY TO THE SCHEDULING WORKING
+    # ---------------- APPLY TO WITTY PI ----------------
     os.system(f"cd {WITTY_PI_DIR} && sudo ./runScript.sh")
 
     print("[Scheduler] Witty Pi schedule applied")

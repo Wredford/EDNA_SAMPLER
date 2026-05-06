@@ -160,7 +160,9 @@ def arm():
         config["interval_min"]
     )
 
-    return "System armed for next scheduled sample.<br><a href='/'>Back</a>"
+    print("System armed for next scheduled sample.<br><a href='/'>Back</a>")
+
+    return
 
 
 if __name__ == "__main__":
