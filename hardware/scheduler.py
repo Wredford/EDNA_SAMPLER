@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import os
+import math
 
 WITTY_PI_DIR = "/home/ore653/wittypi"
 SCHEDULE_FILE = f"{WITTY_PI_DIR}/schedule.wpi"
@@ -18,32 +19,29 @@ def schedule_wakeup(sample_time, sample_duration, pres_duration, interval_min):
         day=now.day
     )
 
+    # SETS IT TO BE TOMORROW AT THE DESIRED TIME IF TODAY IS ALREADY PAST THIS TIME.
     if wake <= now:
         wake += timedelta(days=1)
 
-    # -------- SIMPLE RUNTIME --------
-    runtime_sec = sample_duration + pres_duration + 2
-    runtime_min = max(1, int(runtime_sec / 60))
+    # -------- SAMPLE RUNTIME --------
+    runtime_sec = sample_duration + pres_duration + 20 # Adds 20 seconds for transitions
+    runtime_min = math.ceil(runtime_sec / 60)
 
-    wake_offset = max(1, int((wake - now).total_seconds() / 60))
+    wake_offset_sec = max(0, int((wake - now).total_seconds()))
 
-    # -------- DEBUG --------
-    print("\n========== SCHEDULER DEBUG ==========")
-    print(f"Now:        {now}")
-    print(f"Wake time:  {wake}")
-    print(f"Wake offset (min): {wake_offset}")
-    print(f"Runtime (min): {runtime_min}")
-    print("=====================================\n")
+    wake_offset_hrs = wake_offset_sec // 3600
+    wake_offset_min = (wake_offset_sec % 3600) // 60
+    wake_offset_sec_remainder = wake_offset_sec % 60
 
     # -------- FIXED WITTY PI SCHEDULE --------
-    schedule_text = f"""BEGIN {now.strftime('%Y-%m-%d 00:00:00')}
+    schedule_text = f"""BEGIN {now.strftime('%Y-%m-%d %H:%M:%S')}
 END   2035-12-31 23:59:59
 
-ON M1
-OFF M{wake_offset}
+ON M2
+OFF H{wake_offset_hrs} M{wake_offset_min - 2} S{wake_offset_sec_remainder}
 
 ON M{runtime_min}
-OFF M1 WAIT
+OFF M15 WAIT
 """
 
     schedule_file = "/home/ore653/wittypi/schedule.wpi"
