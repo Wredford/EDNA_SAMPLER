@@ -160,4 +160,5 @@ def arm():
 
 
 if __name__ == "__main__":
+    set_led("on")  # ← initialize LED to idle state
     app.run(host="0.0.0.0", port=5000)
