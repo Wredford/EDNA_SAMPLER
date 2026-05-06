@@ -50,7 +50,6 @@ def schedule_wakeup(sample_time, sample_duration, pres_duration, interval_min):
     schedule_text = f"""BEGIN {now.strftime('%Y-%m-%d %H:%M:%S')}
 END   2035-12-31 23:59:59
 
-OFF M1
 ON  M{wake_offset}
 OFF M{shutdown_offset}
 """
