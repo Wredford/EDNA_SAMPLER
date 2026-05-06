@@ -60,20 +60,20 @@ def home():
         <input type="submit" value="Prime Preservative Pumps">
     </form>
 
-    <br>
-
     <form method="POST" action="/test">
-        <input type="submit" value="Test Run">
+        <input type="submit" value="Full Test Run">
     </form>
 
+    <br>
+
     <form method="POST" action="/stop">
-        <input type="submit" value="Stop Test">
+        <input type="submit" value="Stop Priming/Test">
     </form>
 
     <br>
 
     <form method="POST" action="/arm">
-        <input type="submit" value="Prepare for Next Test">
+        <input type="submit" value="Prepare for Next Deployment">
     </form>
     """
 
@@ -102,9 +102,13 @@ def prime():
     def background_run():
         try:
             test_state["running"] = True
-            prime_preservative_pumps(config)
+            test_state["stop"] = False
+
+            prime_preservative_pumps(config, test_state)
+
         finally:
             test_state["running"] = False
+            test_state["stop"] = False  
 
     thread = threading.Thread(target=background_run, daemon=True)
     thread.start()
