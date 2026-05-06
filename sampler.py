@@ -1,10 +1,10 @@
 import datetime
 import csv
 import time
+import os
 
 from hardware.led import set_led
 from hardware.motors import set_motor
-import os
 
 ###################### CONFIG ###################################
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -18,7 +18,7 @@ os.makedirs(os.path.join(BASE_DIR, "logs"), exist_ok=True)
 def log_event(event, motor="", duration=0, notes=""):
     dtnow = datetime.datetime.now()
 
-    # -------- CSV LOG --------
+    # CSV log
     with open(LOG_FILE, "a", newline="") as f:
         writer = csv.writer(f)
         writer.writerow([
@@ -30,7 +30,7 @@ def log_event(event, motor="", duration=0, notes=""):
             notes
         ])
 
-    # -------- TXT LOG --------
+    # Text log
     with open(TEXT_LOG_FILE, "a") as f:
         f.write(
             f"[{dtnow.strftime('%Y-%m-%d %H:%M:%S')}] "
@@ -49,6 +49,28 @@ MOTOR_SEQUENCE = [
 ]
 
 
+###################### HELPERS ###################################
+
+def safe_stop(main=None, pres=None):
+    """Ensure all motors are OFF safely."""
+    if main:
+        set_motor(main, False)
+    if pres:
+        set_motor(pres, False)
+    log_event("STOP_REQUESTED")
+    set_led("on")
+
+
+def interruptible_sleep(duration, state):
+    """Sleep but allow interruption."""
+    start = time.time()
+    while time.time() - start < duration:
+        if state and state.get("stop"):
+            return False
+        time.sleep(0.1)
+    return True
+
+
 ###################### CORE SEQUENCE ENGINE ######################
 
 def run_sequence(sample_duration, pres_duration, interval_min, state=None):
@@ -61,52 +83,58 @@ def run_sequence(sample_duration, pres_duration, interval_min, state=None):
     try:
         for main, pres in MOTOR_SEQUENCE:
 
-            # ---------------- STOP CHECK ----------------
+            # -------- STOP CHECK --------
             if state and state.get("stop"):
-                log_event("STOP_REQUESTED")
-                set_led("on")
+                safe_stop(main, pres)
                 return
 
-            # ---------------- MAIN MOTOR ----------------
+            # -------- MAIN MOTOR --------
             log_event("MAIN_START", motor=main, duration=sample_duration)
 
             set_motor(main, True)
-            time.sleep(sample_duration)
+            if not interruptible_sleep(sample_duration, state):
+                safe_stop(main, pres)
+                return
             set_motor(main, False)
 
             log_event("MAIN_STOP", motor=main, duration=sample_duration)
 
-            time.sleep(2)
-
-            # ---------------- STOP CHECK ----------------
-            if state and state.get("stop"):
-                log_event("STOP_REQUESTED")
-                set_led("on")
+            if not interruptible_sleep(2, state):
+                safe_stop(main, pres)
                 return
 
-            # ---------------- PRES MOTOR ----------------
+            # -------- STOP CHECK --------
+            if state and state.get("stop"):
+                safe_stop(main, pres)
+                return
+
+            # -------- PRES MOTOR --------
             log_event("PRES_START", motor=pres, duration=pres_duration)
 
             set_motor(pres, True)
-            time.sleep(pres_duration)
+            if not interruptible_sleep(pres_duration, state):
+                safe_stop(main, pres)
+                return
             set_motor(pres, False)
 
             log_event("PRES_STOP", motor=pres, duration=pres_duration)
 
-            # ---------------- STOP CHECK ----------------
+            # -------- STOP CHECK --------
             if state and state.get("stop"):
-                log_event("STOP_REQUESTED")
-                set_led("on")
+                safe_stop(main, pres)
                 return
 
-            # ---------------- INTERVAL ----------------
+            # -------- INTERVAL --------
+            interval_sec = interval_min * 60
             log_event(
                 "INTERVAL_WAIT",
-                duration=interval_min * 60,
+                duration=interval_sec,
                 notes="Between sample stages"
             )
 
-            time.sleep(interval_min * 60)
+            if not interruptible_sleep(interval_sec, state):
+                safe_stop(main, pres)
+                return
 
     except Exception as e:
         log_event("ERROR", notes=str(e))
@@ -114,7 +142,6 @@ def run_sequence(sample_duration, pres_duration, interval_min, state=None):
         raise
 
     total_time = time.time() - start_time
-
     log_event("END_SEQUENCE", notes=f"Total runtime: {total_time:.1f} sec")
     set_led("on")
 
@@ -151,16 +178,13 @@ def run_test(config, state=None):
             interval_min=interval_min,
             state=state
         )
-
-    
     finally:
-        # Ensure LED returns to idle even if stopped or interrupted
         set_led("on")
 
 
 ###################### PRIME MODE #################################
 
-def prime_preservative_pumps(config):
+def prime_preservative_pumps(config, state=None):
     """
     Run preservative pumps in sequence for priming.
     """
@@ -173,15 +197,23 @@ def prime_preservative_pumps(config):
     try:
         for pres in ["pres1", "pres2", "pres3"]:
 
+            if state and state.get("stop"):
+                safe_stop(None, pres)
+                return
+
             log_event("PRES_PRIME_START", motor=pres, duration=pres_duration)
 
             set_motor(pres, True)
-            time.sleep(pres_duration)
+            if not interruptible_sleep(pres_duration, state):
+                safe_stop(None, pres)
+                return
             set_motor(pres, False)
 
             log_event("PRES_PRIME_STOP", motor=pres, duration=pres_duration)
 
-            time.sleep(1)  # small gap between pumps. THIS FUNCTION DOES NOT UTILIE INTERVAL INPUT
+            if not interruptible_sleep(1, state):
+                safe_stop(None, pres)
+                return
 
     except Exception as e:
         log_event("ERROR", notes=str(e))
@@ -192,8 +224,9 @@ def prime_preservative_pumps(config):
     set_led("on")
 
 
+###################### MAIN #################################
+
 if __name__ == "__main__":
-    # This only sets to these configs if sampler.py is run directly instead of from the app (which you shouldnt do)
     print("Running standalone test with default values")
     test_config = {
         "sample_duration": 10,
