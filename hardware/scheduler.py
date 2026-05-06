@@ -12,7 +12,7 @@ def schedule_wakeup(sample_time, sample_duration, pres_duration, interval_min):
 
     now = datetime.now()
 
-    # ---------------- WAKE TIME ----------------
+    # -------- WAKE TIME --------
     wake = datetime.strptime(sample_time, "%H:%M").replace(
         year=now.year,
         month=now.month,
@@ -22,21 +22,36 @@ def schedule_wakeup(sample_time, sample_duration, pres_duration, interval_min):
     if wake <= now:
         wake += timedelta(days=1)
 
+    # -------- RUNTIME --------
     interval_sec = interval_min * 60
-
-    # ---------------- RUNTIME ESTIMATE ----------------
     cycle_time = sample_duration + pres_duration + interval_sec + 2
     total_runtime = cycle_time * MOTOR_CYCLES
 
     shutdown = wake + timedelta(seconds=total_runtime + 120)
 
-    # ---------------- WPI FILE ----------------
-    schedule_text = f"""BEGIN 2026-01-01 00:00:00
-END   2035-01-01 23:59:59
+    # -------- FORMAT TIMES --------
+    wake_h = wake.strftime("%H")
+    wake_m = wake.strftime("%M")
 
-OFF M2
-ON  H{wake.strftime('%H')} M{wake.strftime('%M')}
-OFF M{int(total_runtime / 60) + 2}
+    shutdown_offset_min = int((shutdown - wake).total_seconds() / 60)
+
+    ########### DISPLAY VALUES FOR JOURNALCTL ###################
+    print("\n========== SCHEDULER DEBUG ==========")
+    print(f"Now:        {now}")
+    print(f"Sample time:{sample_time}")
+    print(f"Wake time:  {wake}")
+    print(f"Shutdown:   {shutdown}")
+    print(f"Runtime sec:{total_runtime}")
+    print(f"Interval s: {interval_sec}")
+    print("=====================================\n")
+
+    # -------- SCHEDULE --------
+    schedule_text = f"""BEGIN {now.strftime('%Y-%m-%d %H:%M:%S')}
+END   {shutdown.strftime('%Y-%m-%d %H:%M:%S')}
+
+OFF M1
+ON  H{wake_h} M{wake_m}
+OFF M{shutdown_offset_min}
 """
 
     # write file
@@ -44,7 +59,8 @@ OFF M{int(total_runtime / 60) + 2}
         f.write(schedule_text)
 
     print(f"[Scheduler] Wake: {wake}")
-    print(f"[Scheduler] Shutdown offset: {shutdown}")
+    print(f"[Scheduler] Shutdown: {shutdown}")
+
 
     # ---------------- APPLY TO WITTY PI!!!!!!! ----------------                        THIS LINE IS KEY TO THE SCHEDULING WORKING
     os.system(f"cd {WITTY_PI_DIR} && sudo ./runScript.sh")
