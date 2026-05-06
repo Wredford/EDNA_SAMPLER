@@ -6,6 +6,7 @@ from hardware.scheduler import schedule_wakeup
 import threading
 from hardware.led import set_led
 
+
 set_led("on")
 
 app = Flask(__name__)
@@ -160,9 +161,7 @@ def arm():
         config["interval_min"]
     )
 
-    print("System armed for next scheduled sample.<br><a href='/'>Back</a>")
-
-    return
+    return "System armed for next scheduled sample.<br><a href='/'>Back</a>"
 
 
 if __name__ == "__main__":
