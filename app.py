@@ -6,6 +6,7 @@ from hardware.scheduler import schedule_wakeup
 import threading
 from hardware.led import set_led
 
+WITTY_PI_DIR = "/home/ore653/wittypi"
 
 set_led("on")
 
@@ -26,6 +27,43 @@ def save_config(data):
     with open(CONFIG, "w") as f:
         json.dump(data, f, indent=4)
 
+# FOR MAKING THE SEQUENCE RUN AFER BEING SCHEDULED
+def boot_auto_run():
+    config = load_config()
+
+    if config.get("armed", False):
+
+        print("[BOOT] Armed system detected — starting sampler")
+
+        def background_run():
+            try:
+                test_state["running"] = True
+                test_state["stop"] = False
+
+                run_test(config, test_state)
+
+            finally:
+                test_state["running"] = False
+                test_state["stop"] = False
+
+                config["armed"] = False
+                save_config(config)
+
+        threading.Thread(target=background_run, daemon=True).start()
+
+    else:
+        clear_witty_pi_schedule()
+
+# For WIPING the schedule after its not needed
+def clear_witty_pi_schedule():
+    print("[BOOT] Disarmed state detected → clearing Witty Pi schedule")
+
+    schedule_file = f"{WITTY_PI_DIR}/schedule.wpi"
+
+    with open(schedule_file, "w") as f:
+        f.write("")  # empty schedule = no future wake/sleep cycle
+
+    os.system(f"cd {WITTY_PI_DIR} && sudo ./runScript.sh")
 
 @app.route("/")
 def home():
@@ -165,5 +203,9 @@ def arm():
 
 
 if __name__ == "__main__":
-    set_led("on")  # ← initialize LED to idle state
+    set_led("on")
+
+    # IMPORTANT: run boot check BEFORE serving web app
+    boot_auto_run()
+
     app.run(host="0.0.0.0", port=5000)
