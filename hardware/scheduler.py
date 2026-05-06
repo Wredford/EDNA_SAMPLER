@@ -33,22 +33,26 @@ def schedule_wakeup(sample_time, sample_duration, pres_duration, interval_min):
     wake_h = wake.strftime("%H")
     wake_m = wake.strftime("%M")
 
+    wake_offset = int((wake - now).total_seconds() / 60)
+    shutdown_offset = wake_offset + int(total_runtime / 60)
+
     ########### DISPLAY VALUES FOR JOURNALCTL ###################
     print("\n========== SCHEDULER DEBUG ==========")
     print(f"Now:        {now}")
     print(f"Sample time:{sample_time}")
     print(f"Wake time:  {wake}")
     print(f"Shutdown:   {shutdown}")
-    print(f"Runtime sec:{total_runtime}")
-    print(f"Interval s: {interval_sec}")
+    print(f"Wake offset:  {wake_offset}")
+    print(f"Shutdown offset:   {shutdown_offset}")
     print("=====================================\n")
 
     # -------- SCHEDULE --------
     schedule_text = f"""BEGIN {now.strftime('%Y-%m-%d %H:%M:%S')}
-END   {shutdown.strftime('%Y-%m-%d %H:%M:%S')}
+END   2035-12-31 23:59:59
 
-ON  {wake.strftime('%Y-%m-%d %H:%M:%S')}
-OFF {shutdown.strftime('%Y-%m-%d %H:%M:%S')}
+OFF M1
+ON  M{wake_offset}
+OFF M{shutdown_offset}
 """
 
     # write file
