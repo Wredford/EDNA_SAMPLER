@@ -6,6 +6,27 @@ from hardware.scheduler import schedule_wakeup
 import threading
 from hardware.led import set_led
 
+# May 05 14:51:09 raspberrypi python[2906]: ========== SCHEDULER DEBUG ==========
+May 05 14:51:09 raspberrypi python[2906]: Now:        2026-05-05 14:51:09.369284
+May 05 14:51:09 raspberrypi python[2906]: Sample time:15:00
+May 05 14:51:09 raspberrypi python[2906]: Wake time:  2026-05-05 15:00:00
+May 05 14:51:09 raspberrypi python[2906]: Shutdown:   2026-05-05 15:03:21
+May 05 14:51:09 raspberrypi python[2906]: Runtime sec:81.0
+May 05 14:51:09 raspberrypi python[2906]: Interval s: 0.0
+May 05 14:51:09 raspberrypi python[2906]: =====================================
+May 05 14:51:09 raspberrypi python[2906]: [Scheduler] Wake: 2026-05-05 15:00:00
+May 05 14:51:09 raspberrypi python[2906]: [Scheduler] Shutdown: 2026-05-05 15:03:21
+May 05 14:51:09 raspberrypi sudo[2929]:   ore653 : PWD=/home/ore653/wittypi ; USER=root ; COMMAND=./runScript.sh
+May 05 14:51:09 raspberrypi sudo[2929]: pam_unix(sudo:session): session opened for user root(uid=0) by (uid=1000)
+May 05 14:51:09 raspberrypi python[2930]: --------------- 2026-05-05 14:51:11 ---------------
+May 05 14:51:10 raspberrypi python[2930]: Schedule next shutdown at: 2026-05-06 05:52:09
+May 05 14:51:10 raspberrypi python[2930]: ---------------------------------------------------
+May 05 14:51:10 raspberrypi sudo[2929]: pam_unix(sudo:session): session closed for user root
+May 05 14:51:10 raspberrypi python[2906]: [Scheduler] Witty Pi schedule applied
+May 05 14:51:10 raspberrypi python[2906]: 172.20.10.5 - - [05/May/2026 14:51:10] "POST /arm HTTP/1.1" 200 -
+
+
+
 set_led("on")
 
 app = Flask(__name__)
