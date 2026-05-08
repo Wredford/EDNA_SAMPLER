@@ -41,9 +41,11 @@ def set_led(state):
     _blink_thread = None
 
     if state == "on":
+        time.sleep(2)
         GPIO.output(LED_PIN, GPIO.HIGH)
 
     elif state == "off":
+        time.sleep(2)
         GPIO.output(LED_PIN, GPIO.LOW)
 
     elif state == "sampling":
