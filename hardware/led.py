@@ -61,3 +61,22 @@ def set_led(state):
 
     else:
         print(f"[LED] Unknown state: {state}")
+
+if __name__ == "__main__":
+
+    print("Testing LED ON")
+    set_led("on")
+    time.sleep(3)
+
+    print("Testing LED OFF")
+    set_led("off")
+    time.sleep(3)
+
+    print("Testing LED BLINK")
+    set_led("sampling")
+    time.sleep(10)
+
+    print("Done")
+    set_led("off")
+
+    GPIO.cleanup()
