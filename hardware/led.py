@@ -7,16 +7,15 @@ LED_PIN = 17  # GPIO17 (physical pin 11)
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(LED_PIN, GPIO.OUT)
 
-_state = "off"
 _blink_thread = None
-_stop_blink = False
+_stop_blink = threading.Event()
 
 
 def _blink_loop():
-    global _stop_blink
-    while not _stop_blink:
+    while not _stop_blink.is_set():
         GPIO.output(LED_PIN, GPIO.HIGH)
         time.sleep(0.5)
+
         GPIO.output(LED_PIN, GPIO.LOW)
         time.sleep(0.5)
 
@@ -29,15 +28,17 @@ def set_led(state):
     - "sampling" -> blinking
     """
 
-    global _state, _blink_thread, _stop_blink
-    _state = state
+    global _blink_thread
+
     print(f"[LED] Setting state: {state}")
 
-    # stop any blinking first
-    _stop_blink = True
-    if _blink_thread:
-        _blink_thread.join()
-        _blink_thread = None
+    # stop existing blink thread
+    _stop_blink.set()
+
+    if _blink_thread and _blink_thread.is_alive():
+        _blink_thread.join(timeout=1)
+
+    _blink_thread = None
 
     if state == "on":
         GPIO.output(LED_PIN, GPIO.HIGH)
@@ -46,9 +47,17 @@ def set_led(state):
         GPIO.output(LED_PIN, GPIO.LOW)
 
     elif state == "sampling":
-        _stop_blink = False
-        _blink_thread = threading.Thread(target=_blink_loop, daemon=True)
+
+        # clear stop flag
+        _stop_blink.clear()
+
+        # start blink thread
+        _blink_thread = threading.Thread(
+            target=_blink_loop,
+            daemon=True
+        )
+
         _blink_thread.start()
 
     else:
-        print("Unknown LED state:", state)
+        print(f"[LED] Unknown state: {state}")
